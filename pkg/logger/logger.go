@@ -49,6 +49,18 @@ func Level() *zap.SugaredLogger {
 	return global
 }
 
+func SetLevel(l string) {
+	var zapLevel zapcore.Level
+	if err := zapLevel.Set(l); err != nil {
+		Warnf(context.Background(), "failed  parse log level %#q: %s, setting to WARN", level, err)
+		zapLevel = zapcore.WarnLevel
+	}
+}
+
+func Logger() *zap.SugaredLogger {
+	return global
+}
+
 func SetLogger(l *zap.SugaredLogger) {
 	global = l
 }
@@ -57,24 +69,28 @@ func Debug(ctx context.Context, args ...interface{}) {
 	FromContext(ctx).Debug(args...)
 }
 
-func Debugf(ctx context.Context, format string, args ...interface{})  {
-	FromContext(ctx).Debugf(format,args...)
+func Debugf(ctx context.Context, format string, args ...interface{}) {
+	FromContext(ctx).Debugf(format, args...)
 }
 
-func DebugKV(ctx context.Context, message string, kvs ...interface{})  {
+func DebugKV(ctx context.Context, message string, kvs ...interface{}) {
 	FromContext(ctx).Debugw(message, kvs...)
 }
 
-func Info(ctx context.Context, args ...interface{})  {
+func Info(ctx context.Context, args ...interface{}) {
 	FromContext(ctx).Info(args...)
 }
 
-func Infof(ctx context.Context, format string, args ...interface{})  {
+func Infof(ctx context.Context, format string, args ...interface{}) {
 	FromContext(ctx).Infof(format, args...)
 }
 
-func InfoKV(ctx context.Context, message string, kvs ...interface{})  {
-	FromContext(ctx).Infow(message,kvs...)
+func InfoKV(ctx context.Context, message string, kvs ...interface{}) {
+	FromContext(ctx).Infow(message, kvs...)
+}
+
+func Warn(ctx context.Context, args ...interface{}) {
+	FromContext(ctx).Warn(args...)
 }
 
 func Warnf(ctx context.Context, format string, args ...interface{}) {
