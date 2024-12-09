@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "example",
+    "env": "local",
+    "log_level": "debug",
+    "trace_ratio": 0.2
+  },
+  "server": {
+    "http_port": 8080,
+    "grpc_port": 9090,
+    "monitoring_port": 8081,
+    "logging": true,
+    "with_swagger": true
+  },
+  "db": {
+    "master": {
+      "host": "localhost",
+      "port": 3307,
+      "user": "root",
+      "password": "1234",
+      "database": "example",
+      "timeout": "2s"
+    },
+    "metrics": true,
+    "migrations": true
+  },
+  "jwt_secret": "SECRET"
+}
