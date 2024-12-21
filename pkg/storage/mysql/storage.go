@@ -41,9 +41,6 @@ type MySQL interface {
 
 type Storage struct {
 	db *sqlx.DB
-
-	master *sqlx.DB
-	slave  *sqlx.DB
 }
 
 func New(cfg Config) (*Storage, error) {
@@ -54,8 +51,7 @@ func New(cfg Config) (*Storage, error) {
 	masterDB.DB.SetMaxOpenConns(int(cfg.DBconfig.MaxOpen))
 
 	s := &Storage{
-		db:     masterDB,
-		master: masterDB,
+		db: masterDB,
 	}
 
 	return s, err
@@ -66,9 +62,7 @@ func (s *Storage) Master() *Storage {
 }
 
 func (s *Storage) Slave() *Storage {
-	return &Storage{
-		db: s.slave,
-	}
+	return s
 }
 
 func (s *Storage) GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
@@ -169,33 +163,11 @@ func (s *Stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result
 }
 
 func (s *Storage) Close() error {
-	if err := s.master.Close(); err != nil {
+	if err := s.db.Close(); err != nil {
 		return errors.Wrap(err, "db master")
 	}
 
-	if err := s.slave.Close(); err != nil {
-		return errors.Wrap(err, "db slave")
-	}
 	return nil
-}
-
-const HealthCheckTimeout = 5 * time.Second
-
-func (s *Storage) HealthCheck(timeout time.Duration) func() error {
-	return func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-		if s == nil || s.master == nil || s.slave == nil {
-			return fmt.Errorf("database is nil")
-		}
-		if err := s.master.PingContext(ctx); err != nil {
-			return errors.Wrap(err, "db master")
-		}
-		if err := s.slave.PingContext(ctx); err != nil {
-			return errors.Wrap(err, "db slave")
-		}
-		return nil
-	}
 }
 
 func dsn(cfg NodeConfig) string {

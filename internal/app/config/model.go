@@ -28,8 +28,7 @@ type Server struct {
 }
 
 type DB struct {
-	Master     DBConfig `mapstructure:"master"`
-	Slave      DBConfig `mapstructure:"slave"`
+	DB         DBConfig `mapstructure:"db"`
 	Metrics    bool     `mapstructure:"metrics"`
 	Migrations bool     `mapstructure:"migrations"`
 }
