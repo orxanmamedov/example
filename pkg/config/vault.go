@@ -6,7 +6,6 @@ import (
 	"fmt"
 	vault "github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"os"
 	"time"
 )
@@ -17,22 +16,6 @@ const (
 
 	vaultTimeout = 10 * time.Second
 )
-
-func fromVault(pathApp, pathKey string) (bool, error) {
-	m, err := readVault(pathApp, pathKey)
-	if err != nil {
-		return false, err
-	}
-	err = viper.MergeConfigMap(m)
-	if err != nil {
-		return false, err
-	}
-
-	if m != nil {
-		logger.Debugf(context.Background(), "Config: load from Vault: %s", pathKey)
-	}
-	return true, nil
-}
 
 func readVault(pathApp, pathKey string) (map[string]interface{}, error) {
 	if os.Getenv(vault.EnvVaultAddress) == "" {
