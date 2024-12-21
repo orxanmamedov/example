@@ -8,7 +8,6 @@
   "server": {
     "http_port": 8080,
     "grpc_port": 9090,
-    "monitoring_port": 8081,
     "logging": true,
     "with_swagger": true
   },
@@ -21,7 +20,6 @@
       "database": "example",
       "timeout": "2s"
     },
-    "metrics": true,
     "migrations": true
   },
   "jwt_secret": "SECRET"
