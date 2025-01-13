@@ -15,10 +15,10 @@ const (
 	configJSON = "json"
 )
 
-type Secretstring string
+type SecretString string
 
-func (s Secretstring) String() string { return "*********" }
-func (s Secretstring) Value() string  { return string(s) }
+func (s SecretString) String() string { return "*********" }
+func (s SecretString) Value() string  { return string(s) }
 
 type Options struct {
 	Dir                string
