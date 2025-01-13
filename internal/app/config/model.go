@@ -13,10 +13,9 @@ type Config struct {
 }
 
 type App struct {
-	Env        string  `mapstructure:"env"`
-	Name       string  `mapstructure:"name"`
-	LogLevel   string  `mapstructure:"log_level"`
-	TraceRatio float64 `mapstructure:"trace_ratio"`
+	Env      string `mapstructure:"env"`
+	Name     string `mapstructure:"name"`
+	LogLevel string `mapstructure:"log_level"`
 }
 
 type Server struct {
