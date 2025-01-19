@@ -1,7 +1,9 @@
 package domain
 
+import "github.com/gofrs/uuid"
+
 type User struct {
-	ID       int     `db:"id"`       // Maps to the `ID` column
-	Username *string `db:"username"` // Maps to the `Username` column
-	Email    *string `db:"email"`    // Maps to the `Email` column
+	ID    uuid.UUID `db:"id"`
+	Name  string    `db:"name"`
+	Email string    `db:"email"`
 }
