@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"example/internal/domain"
+	"example/internal/uuid"
 	"example/pkg/storage/mysql"
-	"github.com/gofrs/uuid"
 	"go.uber.org/zap"
 	"strings"
 )
@@ -18,9 +18,10 @@ type UserRepo struct {
 func NewUserRepo(db mysql.MySQL, logger *zap.Logger) *UserRepo {
 	return &UserRepo{db: db, logger: logger}
 }
+
 func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	ur.logger.Info("UserRepo.GetAllUsers")
-	const query = `select id, username, email from user`
+	const query = `SELECT id, username, email FROM user`
 
 	var users []domain.User
 	err := ur.db.SelectContext(ctx, &users, query)
@@ -38,10 +39,10 @@ func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 
 func (ur *UserRepo) GetUser(ctx context.Context, ID uuid.UUID) (domain.User, error) {
 	ur.logger.Info("UserRepo.GetUser", zap.String("id", ID.String()))
-	const query = `select id, username, email from user where id = ?`
+	const query = `SELECT id, username, email FROM user WHERE id = ?`
 
 	var user domain.User
-	err := ur.db.SelectContext(ctx, &user, query, ID)
+	err := ur.db.GetContext(ctx, &user, query, ID.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ur.logger.Warn("UserRepo.GetUser: no user found", zap.String("ID", ID.String()))
@@ -56,21 +57,15 @@ func (ur *UserRepo) GetUser(ctx context.Context, ID uuid.UUID) (domain.User, err
 func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID, error) {
 	ur.logger.Info("UserRepo.CreateUser")
 
-	id, err := uuid.NewV7()
-	if err != nil {
-		ur.logger.Error("UserRepo.CreateUser UUID generation error", zap.Error(err))
-		return uuid.Nil, err
-	}
-
-	user.ID = id
+	id := uuid.NewUUID()
+	user.UUID = id.String()
 
 	const query = `INSERT INTO user (id, username, email) VALUES (?, ?, ?)`
 
-	_, err = ur.db.ExecContext(ctx, query, user)
-
+	_, err := ur.db.ExecContext(ctx, query, user.UUID, user.Name, user.Email)
 	if err != nil {
 		ur.logger.Error("UserRepo.CreateUser exec error", zap.Error(err))
-		return uuid.Nil, err
+		return "", err
 	}
 
 	ur.logger.Info("UserRepo.CreateUser: user created successfully", zap.String("ID", id.String()))
@@ -79,24 +74,24 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID
 }
 
 func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
-	ur.logger.Info("UserRepo.UpdateUser", zap.String("id", user.ID.String()))
+	ur.logger.Info("UserRepo.UpdateUser", zap.String("id", user.UUID))
 
-	query := `UPDATE user SET`
+	query := `UPDATE user SET `
 	params := []interface{}{}
 
 	if user.Name != "" {
-		query += `Name = ?,`
+		query += "username = ?,"
 		params = append(params, user.Name)
 	}
 
 	if user.Email != "" {
-		query += " Email = ?,"
+		query += " email = ?,"
 		params = append(params, user.Email)
 	}
 
 	// Remove trailing comma and add WHERE clause
 	query = strings.TrimSuffix(query, ",") + " WHERE id = ?"
-	params = append(params, user.ID)
+	params = append(params, user.UUID)
 
 	res, err := ur.db.ExecContext(ctx, query, params...)
 	if err != nil {
@@ -111,10 +106,10 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (domain.Us
 	}
 	if affected == 0 {
 		ur.logger.Error("UserRepo.UpdateUser no rows affected error", zap.Error(err))
-		return domain.User{}, err
+		return domain.User{}, sql.ErrNoRows
 	}
 
-	ur.logger.Info("UserRepo.UpdateUser updated user successfully", zap.String("ID", user.ID.String()))
+	ur.logger.Info("UserRepo.UpdateUser updated user successfully", zap.String("ID", user.UUID))
 	return user, nil
 }
 
@@ -123,8 +118,7 @@ func (ur *UserRepo) DeleteUser(ctx context.Context, ID uuid.UUID) error {
 
 	const query = `DELETE FROM user WHERE id = ?`
 
-	res, err := ur.db.ExecContext(ctx, query, ID)
-
+	res, err := ur.db.ExecContext(ctx, query, ID.String())
 	if err != nil {
 		ur.logger.Error("UserRepo.DeleteUser exec error", zap.Error(err))
 		return err
@@ -138,7 +132,7 @@ func (ur *UserRepo) DeleteUser(ctx context.Context, ID uuid.UUID) error {
 
 	if affected == 0 {
 		ur.logger.Error("UserRepo.DeleteUser no rows affected error", zap.Error(err))
-		return err
+		return sql.ErrNoRows
 	}
 
 	ur.logger.Info("UserRepo.DeleteUser: user deleted successfully", zap.String("ID", ID.String()))
