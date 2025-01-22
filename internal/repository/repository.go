@@ -37,7 +37,7 @@ func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-func (ur *UserRepo) GetUser(ctx context.Context, ID uuid.UUID) (domain.User, error) {
+func (ur *UserRepo) GetUser(ctx context.Context, ID uuid.UUID) (*domain.User, error) {
 	ur.logger.Info("UserRepo.GetUser", zap.String("id", ID.String()))
 	const query = `SELECT id, username, email FROM user WHERE id = ?`
 
@@ -46,12 +46,12 @@ func (ur *UserRepo) GetUser(ctx context.Context, ID uuid.UUID) (domain.User, err
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ur.logger.Warn("UserRepo.GetUser: no user found", zap.String("ID", ID.String()))
-			return domain.User{}, nil
+			return nil, nil
 		}
 		ur.logger.Error("UserRepo.GetUser query error", zap.Error(err))
-		return domain.User{}, err
+		return nil, err
 	}
-	return user, nil
+	return &user, nil
 }
 
 func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID, error) {
@@ -73,7 +73,7 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID
 	return id, nil
 }
 
-func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
+func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.User, error) {
 	ur.logger.Info("UserRepo.UpdateUser", zap.String("id", user.UUID))
 
 	query := `UPDATE user SET `
@@ -96,21 +96,21 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (domain.Us
 	res, err := ur.db.ExecContext(ctx, query, params...)
 	if err != nil {
 		ur.logger.Error("UserRepo.UpdateUser exec error", zap.Error(err))
-		return domain.User{}, err
+		return nil, err
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
 		ur.logger.Error("UserRepo.UpdateUser RowsAffected error", zap.Error(err))
-		return domain.User{}, err
+		return nil, err
 	}
 	if affected == 0 {
 		ur.logger.Error("UserRepo.UpdateUser no rows affected error", zap.Error(err))
-		return domain.User{}, sql.ErrNoRows
+		return nil, sql.ErrNoRows
 	}
 
 	ur.logger.Info("UserRepo.UpdateUser updated user successfully", zap.String("ID", user.UUID))
-	return user, nil
+	return &user, nil
 }
 
 func (ur *UserRepo) DeleteUser(ctx context.Context, ID uuid.UUID) error {
