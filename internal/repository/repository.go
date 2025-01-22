@@ -21,7 +21,7 @@ func NewUserRepo(db mysql.MySQL, logger *zap.Logger) *UserRepo {
 
 func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	ur.logger.Info("UserRepo.GetAllUsers")
-	const query = `SELECT id, username, email FROM user`
+	const query = `SELECT uuid, username, email FROM user`
 
 	var users []domain.User
 	err := ur.db.SelectContext(ctx, &users, query)
@@ -37,15 +37,15 @@ func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-func (ur *UserRepo) GetUser(ctx context.Context, ID uuid.UUID) (*domain.User, error) {
-	ur.logger.Info("UserRepo.GetUser", zap.String("id", ID.String()))
-	const query = `SELECT id, username, email FROM user WHERE id = ?`
+func (ur *UserRepo) GetUser(ctx context.Context, UUID uuid.UUID) (*domain.User, error) {
+	ur.logger.Info("UserRepo.GetUser", zap.String("uuid", UUID.String()))
+	const query = `SELECT uuid, username, email FROM user WHERE uuid = ?`
 
 	var user domain.User
-	err := ur.db.GetContext(ctx, &user, query, ID.String())
+	err := ur.db.GetContext(ctx, &user, query, UUID.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ur.logger.Warn("UserRepo.GetUser: no user found", zap.String("ID", ID.String()))
+			ur.logger.Warn("UserRepo.GetUser: no user found", zap.String("UUID", UUID.String()))
 			return nil, nil
 		}
 		ur.logger.Error("UserRepo.GetUser query error", zap.Error(err))
@@ -60,7 +60,7 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID
 	id := uuid.NewUUID()
 	user.UUID = id.String()
 
-	const query = `INSERT INTO user (id, username, email) VALUES (?, ?, ?)`
+	const query = `INSERT INTO user (uuid, username, email) VALUES (?, ?, ?)`
 
 	_, err := ur.db.ExecContext(ctx, query, user.UUID, user.Name, user.Email)
 	if err != nil {
@@ -68,13 +68,13 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID
 		return "", err
 	}
 
-	ur.logger.Info("UserRepo.CreateUser: user created successfully", zap.String("ID", id.String()))
+	ur.logger.Info("UserRepo.CreateUser: user created successfully", zap.String("UUID", id.String()))
 
 	return id, nil
 }
 
 func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.User, error) {
-	ur.logger.Info("UserRepo.UpdateUser", zap.String("id", user.UUID))
+	ur.logger.Info("UserRepo.UpdateUser", zap.String("uuid", user.UUID))
 
 	query := `UPDATE user SET `
 	params := []interface{}{}
@@ -90,7 +90,7 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.U
 	}
 
 	// Remove trailing comma and add WHERE clause
-	query = strings.TrimSuffix(query, ",") + " WHERE id = ?"
+	query = strings.TrimSuffix(query, ",") + " WHERE uuid = ?"
 	params = append(params, user.UUID)
 
 	res, err := ur.db.ExecContext(ctx, query, params...)
@@ -109,16 +109,16 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.U
 		return nil, sql.ErrNoRows
 	}
 
-	ur.logger.Info("UserRepo.UpdateUser updated user successfully", zap.String("ID", user.UUID))
+	ur.logger.Info("UserRepo.UpdateUser updated user successfully", zap.String("UUID", user.UUID))
 	return &user, nil
 }
 
-func (ur *UserRepo) DeleteUser(ctx context.Context, ID uuid.UUID) error {
-	ur.logger.Info("UserRepo.DeleteUser", zap.String("id", ID.String()))
+func (ur *UserRepo) DeleteUser(ctx context.Context, UUID uuid.UUID) error {
+	ur.logger.Info("UserRepo.DeleteUser", zap.String("UUID", UUID.String()))
 
-	const query = `DELETE FROM user WHERE id = ?`
+	const query = `DELETE FROM user WHERE uuid = ?`
 
-	res, err := ur.db.ExecContext(ctx, query, ID.String())
+	res, err := ur.db.ExecContext(ctx, query, UUID.String())
 	if err != nil {
 		ur.logger.Error("UserRepo.DeleteUser exec error", zap.Error(err))
 		return err
@@ -135,7 +135,7 @@ func (ur *UserRepo) DeleteUser(ctx context.Context, ID uuid.UUID) error {
 		return sql.ErrNoRows
 	}
 
-	ur.logger.Info("UserRepo.DeleteUser: user deleted successfully", zap.String("ID", ID.String()))
+	ur.logger.Info("UserRepo.DeleteUser: user deleted successfully", zap.String("UUID", UUID.String()))
 
 	return nil
 }
