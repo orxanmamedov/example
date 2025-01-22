@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"example/internal/domain"
-	"example/internal/uuid"
+	UserUUIS "example/internal/uuid"
 	"example/pkg/storage/mysql"
 	"go.uber.org/zap"
 	"strings"
@@ -37,7 +37,7 @@ func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-func (ur *UserRepo) GetUser(ctx context.Context, UUID uuid.UUID) (*domain.User, error) {
+func (ur *UserRepo) GetUser(ctx context.Context, UUID UserUUIS.UUID) (*domain.User, error) {
 	ur.logger.Info("UserRepo.GetUser", zap.String("uuid", UUID.String()))
 	const query = `SELECT uuid, username, email FROM user WHERE uuid = ?`
 
@@ -54,11 +54,11 @@ func (ur *UserRepo) GetUser(ctx context.Context, UUID uuid.UUID) (*domain.User, 
 	return &user, nil
 }
 
-func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID, error) {
+func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (UserUUIS.UUID, error) {
 	ur.logger.Info("UserRepo.CreateUser")
 
-	id := uuid.NewUUID()
-	user.UUID = id.String()
+	uuid := UserUUIS.NewUUID()
+	user.UUID = uuid.String()
 
 	const query = `INSERT INTO user (uuid, username, email) VALUES (?, ?, ?)`
 
@@ -68,9 +68,9 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user domain.User) (uuid.UUID
 		return "", err
 	}
 
-	ur.logger.Info("UserRepo.CreateUser: user created successfully", zap.String("UUID", id.String()))
+	ur.logger.Info("UserRepo.CreateUser: user created successfully", zap.String("UUID", uuid.String()))
 
-	return id, nil
+	return uuid, nil
 }
 
 func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.User, error) {
@@ -113,7 +113,7 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.U
 	return &user, nil
 }
 
-func (ur *UserRepo) DeleteUser(ctx context.Context, UUID uuid.UUID) error {
+func (ur *UserRepo) DeleteUser(ctx context.Context, UUID UserUUIS.UUID) error {
 	ur.logger.Info("UserRepo.DeleteUser", zap.String("UUID", UUID.String()))
 
 	const query = `DELETE FROM user WHERE uuid = ?`
