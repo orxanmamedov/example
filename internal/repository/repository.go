@@ -77,23 +77,23 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, user domain.User) (*domain.U
 	ur.logger.Info("UserRepo.UpdateUser", zap.String("uuid", user.UUID))
 
 	query := `UPDATE user SET `
-	params := []interface{}{}
+	var args []any
 
 	if user.Name != "" {
 		query += "username = ?,"
-		params = append(params, user.Name)
+		args = append(args, user.Name)
 	}
 
 	if user.Email != "" {
 		query += " email = ?,"
-		params = append(params, user.Email)
+		args = append(args, user.Email)
 	}
 
 	// Remove trailing comma and add WHERE clause
 	query = strings.TrimSuffix(query, ",") + " WHERE uuid = ?"
-	params = append(params, user.UUID)
+	args = append(args, user.UUID)
 
-	res, err := ur.db.ExecContext(ctx, query, params...)
+	res, err := ur.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		ur.logger.Error("UserRepo.UpdateUser exec error", zap.Error(err))
 		return nil, err
